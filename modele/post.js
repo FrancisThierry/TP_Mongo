@@ -10,6 +10,10 @@ const postSchema = new Schema({
         required: false,
     },
     comments: [{ type: mongoose.Types.ObjectId, ref: 'Comment', required: false }],
+    price: {
+        type: Number,
+        required: false,
+    },
 
 });
 

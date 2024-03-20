@@ -3,10 +3,42 @@ require('dotenv').config()
 const Comment = require('./modele/comment')
 const connectDB = require('./config/db')
 const express = require('express');
+
+const cors = require('cors');
 const app = express();
 app.use(express.json()); // Parse incoming JSON data
 
+// Configuration CORS avec des options spécifiques
+const corsOptions = {
+    origin: 'http://localhost:3000',
+  };
+  
+  // Utiliser le middleware cors avec les options spécifiques
+  app.use(cors(corsOptions));
+
+// Utiliser le middleware cors pour toutes les routes
+app.use(cors());
+
 // API posts
+//somme des prix
+
+app.get('/posts/price/sum', async (req, res) => {
+    try {
+        connectDB()
+        const totalPrices = await Post.aggregate([
+            { $match: { price: { $exists: true } } }, // Filter for documents with existing price
+            { $group: { _id: null, totalPrice: { $sum: '$price' } } }, // Group and sum prices
+          ]);
+        if (!totalPrices) {
+            return res.send([]);
+        }
+        res.json({"total":totalPrices}); // Send prices total as JSON response
+    } catch (err) {
+        console.error('Error retrieving posts:', err);
+        res.status(500).send('Internal Server Error'); // Handle errors gracefully
+    }
+});
+
 //detail
 app.get('/posts/:id', async (req, res) => {
     try {
@@ -42,9 +74,11 @@ app.post('/posts', async (req, res) => {
         // Création d'un nouveau post
         entry = req.body.entry
         categories = req.body.categories
+        price = req.body.price
         const newPost = new Post({
             entry,
             categories,
+            price
         });
         //Enregistrement du post dans la base de données
         await newPost.save();
@@ -74,6 +108,10 @@ app.put('/posts', async (req, res) => {
 
         if (req.body.comments) {
 			post.comments = req.body.comments
+		}
+
+        if (req.body.price) {
+			post.price = req.body.price
 		}
 
         
@@ -176,6 +214,8 @@ app.delete("/comments", async (req, res) => {
     }
 })
 
-app.listen(3000, () => {
-    console.log('Serveur Express en écoute sur le port '+(process.env.PORT || 3000));
+port = (process.env.PORT || 3000)
+
+app.listen(port, () => {
+    console.log('Serveur Express en écoute sur le port '+port);
 });
