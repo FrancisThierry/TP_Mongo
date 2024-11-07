@@ -1,16 +1,42 @@
 const Post = require('./modele/post')
 require('dotenv').config()
 const Comment = require('./modele/comment')
-const connectDB = require('./config/db')
+// const connectDB = require('./config/db')
 const express = require('express');
 
 const cors = require('cors');
 const app = express();
 app.use(express.json()); // Parse incoming JSON data
 
+
+
+const mongoose = require("mongoose");
+require('dotenv').config();
+
+const uri = process.env.MONGO_URL;
+const connectDB = async () => {
+    try {
+        // Options de connexion pour assurer une connexion stable et gérer les erreurs
+        const clientOptions = {
+            serverSelectionTimeoutMS: 5000 // Délai d'attente de 5 secondes pour la sélection du serveur
+        };
+
+        await mongoose.connect(uri, clientOptions);
+        console.log('Connected to MongoDB');
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
+    }
+};
+
+connectDB();
+
+
+
+
+
 // Configuration CORS avec des options spécifiques
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:1664',
   };
   
   // Utiliser le middleware cors avec les options spécifiques
@@ -24,7 +50,6 @@ app.use(cors());
 
 app.get('/posts/price/sum', async (req, res) => {
     try {
-        connectDB()
         const totalPrices = await Post.aggregate([
             { $match: { price: { $exists: true } } }, // Filter for documents with existing price
             { $group: { _id: null, totalPrice: { $sum: '$price' } } }, // Group and sum prices
@@ -42,7 +67,6 @@ app.get('/posts/price/sum', async (req, res) => {
 //detail
 app.get('/posts/:id', async (req, res) => {
     try {
-        connectDB()
         const posts = await Post.findById(req.params.id).populate('comments')
         if (posts.length === 0) {
             return res.send([]);
@@ -56,7 +80,7 @@ app.get('/posts/:id', async (req, res) => {
 //récupération
 app.get('/posts', async (req, res) => {
     try {
-        connectDB()
+        connectDB().catch(console.dir);
         const posts = await Post.find().populate('comments')
         if (posts.length === 0) {
             return res.send([]);
@@ -70,7 +94,6 @@ app.get('/posts', async (req, res) => {
 // Ajout
 app.post('/posts', async (req, res) => {
     try {
-        connectDB()        
         // Création d'un nouveau post
         entry = req.body.entry
         categories = req.body.categories
@@ -95,7 +118,6 @@ app.post('/posts', async (req, res) => {
 //Mise à jour
 app.put('/posts', async (req, res) => {
     try {
-        connectDB()   
         const post = await Post.findOne({ _id: req.body._id })
 
         if (req.body.entry) {
@@ -138,7 +160,6 @@ app.delete("/posts", async (req, res) => {
 // ajouter
 app.post('/comments', async (req, res) => {
     try {
-        connectDB()        
         // Création d'un nouveau comment
         comment_text = req.body.comment_text
         const newComment = new Comment({
@@ -159,7 +180,6 @@ app.post('/comments', async (req, res) => {
 // récupérer
 app.get('/comments', async (req, res) => {
     try {
-        connectDB()
         const comments = await Comment.find()
         if (comments.length === 0) {
             return res.send([]);
@@ -173,7 +193,6 @@ app.get('/comments', async (req, res) => {
 //detail
 app.get('/comments/:id', async (req, res) => {
     try {
-        connectDB()
         const comments = await Comment.findById(req.params.id)
         if (comments.length === 0) {
             return res.send([]);
@@ -187,7 +206,6 @@ app.get('/comments/:id', async (req, res) => {
 //Mise à jour
 app.put('/comments', async (req, res) => {
     try {
-        connectDB()   
         const comment = await Comment.findOne({ _id: req.body._id })
 
         if (req.body.comment_text) {
