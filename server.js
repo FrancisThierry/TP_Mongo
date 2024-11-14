@@ -80,7 +80,6 @@ app.get('/posts/:id', async (req, res) => {
 //récupération
 app.get('/posts', async (req, res) => {
     try {
-        connectDB().catch(console.dir);
         const posts = await Post.find().populate('comments')
         if (posts.length === 0) {
             return res.send([]);
